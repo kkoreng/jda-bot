@@ -5,9 +5,11 @@ build/
 !**/src/test/**/build/
 .kotlin
 
+
 logs/
 .env
 config.yml
+
 
 ### IntelliJ IDEA ###
 .idea/
