@@ -9,7 +9,10 @@ import com.kkoreng.jda.logging.Loggers;
 import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+
+import java.util.List;
 
 public final class JDAManager {
 
@@ -29,7 +32,9 @@ public final class JDAManager {
             Loggers.BOT.info("Starting JDA...");
 
             CommandRegistry commandRegistry = loadCommands();
-            this.jda = login(commandRegistry);
+            List<EventListener> listeners = loadListeners();
+
+            this.jda = login(commandRegistry, listeners);
             registerSlashCommands(commandRegistry);
 
         } catch (InterruptedException e) {
@@ -53,14 +58,20 @@ public final class JDAManager {
         return commandRegistry;
     }
 
+    private List<EventListener> loadListeners() {
+        List<EventListener> listeners = new ComponentLoader().loadListeners(basePackage);
+        Loggers.EVENT.info("Loaded {} listeners", listeners.size());
+        return listeners;
+    }
 
-    private JDA login(CommandRegistry commandRegistry) throws InterruptedException {
+    private JDA login(CommandRegistry commandRegistry, List<EventListener> listeners) throws InterruptedException {
         final
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         String token = dotenv.get("TOKEN");
 
         JDABuilder builder = JDABuilder.createDefault(token)
-                .addEventListeners(new SlashCommandDispatcher(commandRegistry));
+                .addEventListeners(new SlashCommandDispatcher(commandRegistry))
+                .addEventListeners(listeners.toArray());
 
         if (!commandRegistry.getTextCommands().isEmpty()) {
             builder.enableIntents(GatewayIntent.MESSAGE_CONTENT)
